@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Co-op Chaos: Talk & Tap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* Reset & Core Rules */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Outfit', sans-serif;
+    }
+    body {
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      background: #1a103c;
+      color: #333;
+    }
+
+    /* Screen Management */
+    .screen {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* 1. START SCREEN */
+    #start-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #2e1c59 0%, #1a103c 100%);
+      padding: 30px;
+      text-align: center;
+      z-index: 100;
+    }
+    .title-box {
+      margin-bottom: 25px;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .game-title {
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: #FFF;
+      text-shadow: 0 6px 0 #FF5964, 0 12px 25px rgba(0,0,0,0.5);
+      line-height: 1.1;
+      margin-bottom: 10px;
+    }
+    .game-subtitle {
+      font-size: 1.3rem;
+      color: #A0E8AF;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .instructions-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 24px;
+      padding: 25px;
+      max-width: 500px;
+      color: #FFF;
+      margin-bottom: 35px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    }
+    .instructions-card h3 {
+      color: #FFD166;
+      font-size: 1.4rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .instructions-card p {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: #E2E2E2;
+    }
+    .start-btn {
+      background: #FF5964;
+      color: white;
+      font-size: 1.8rem;
+      font-weight: 900;
+      padding: 18px 50px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 8px 0 #C83E47, 0 15px 25px rgba(255, 89, 100, 0.4);
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+    .start-btn:active {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 #C83E47, 0 5px 15px rgba(255, 89, 100, 0.4);
+    }
+
+    /* 2. GAME SCREEN */
+    #game-screen {
+      display: none; /* Controlled via JS */
+      flex-direction: row; /* Default Landscape */
+      background: #111;
+    }
+    .player-zone {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+      position: relative;
+    }
+    .player-zone.p1 {
+      background: linear-gradient(135deg, #FFB5A7 0%, #FCD5CE 100%);
+    }
+    .player-zone.p2 {
+      background: linear-gradient(135deg, #A0E8AF 0%, #C8F7DC 100%);
+    }
+
+    /* Flash Animations */
+    @keyframes flashGreen {
+      0% { box-shadow: inset 0 0 60px #2EC4B6; }
+      100% { box-shadow: inset 0 0 0 transparent; }
+    }
+    @keyframes flashRed {
+      0% { box-shadow: inset 0 0 70px #FF5964; }
+      100% { box-shadow: inset 0 0 0 transparent; }
+    }
+    .flash-correct { animation: flashGreen 0.3s ease-out; }
+    .flash-wrong { animation: flashRed 0.3s ease-out; }
+
+    /* Zone Header & Task Card */
+    .zone-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .player-badge {
+      background: #2D3142;
+      color: #FFF;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 20px;
+      letter-spacing: 1px;
+    }
+    .task-card {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 20px;
+      padding: 12px 20px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      border: 3px solid #FFF;
+      transition: transform 0.1s;
+    }
+    @keyframes pulseRed {
+      0%, 100% { border-color: #FF5964; transform: scale(1); }
+      50% { border-color: #900; transform: scale(1.03); }
+    }
+    .pulse-red {
+      animation: pulseRed 0.4s infinite;
+    }
+    .task-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .task-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 6px 0 10px 0;
+    }
+    .task-img {
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+    }
+    .task-target {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #2D3142;
+    }
+    .task-timer-bg {
+      width: 100%;
+      height: 8px;
+      background: #E0E0E0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .task-timer-fill {
+      width: 100%;
+      height: 100%;
+      background: #2EC4B6;
+      transition: width 0.1s linear, background 0.2s;
+    }
+
+    /* Action Buttons Grid */
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      width: 100%;
+      max-width: 420px;
+      margin: 0 auto;
+      flex: 1;
+      max-height: 260px;
+      align-items: center;
+    }
+    .action-btn {
+      background: #FFF;
+      border: none;
+      border-radius: 20px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 0.1s, box-shadow 0.1s;
+      height: 100%;
+      max-height: 120px;
+    }
+    .action-btn img {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    .btn-label {
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: #FFF;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+    }
+
+    /* P1 Custom Colors */
+    .btn-p1-rocket { background: #FF5964; box-shadow: 0 6px 0 #C83E47; }
+    .btn-p1-fire { background: #FFA62B; box-shadow: 0 6px 0 #CC7E1D; }
+    .btn-p1-crown { background: #FFD166; box-shadow: 0 6px 0 #CCA54D; }
+    .btn-p1-star { background: #4ECDC4; box-shadow: 0 6px 0 #3B9D96; }
+
+    /* P2 Custom Colors */
+    .btn-p2-donut { background: #FF85A1; box-shadow: 0 6px 0 #CC657D; }
+    .btn-p2-pizza { background: #F7B801; box-shadow: 0 6px 0 #C29000; }
+    .btn-p2-watermelon { background: #2EC4B6; box-shadow: 0 6px 0 #208C82; }
+    .btn-p2-icecream { background: #A06CD5; box-shadow: 0 6px 0 #7A4EB0; }
+
+    .action-btn:active {
+      transform: translateY(4px);
+    }
+    .btn-p1-rocket:active { box-shadow: 0 2px 0 #C83E47; }
+    .btn-p1-fire:active { box-shadow: 0 2px 0 #CC7E1D; }
+    .btn-p1-crown:active { box-shadow: 0 2px 0 #CCA54D; }
+    .btn-p1-star:active { box-shadow: 0 2px 0 #3B9D96; }
+    .btn-p2-donut:active { box-shadow: 0 2px 0 #CC657D; }
+    .btn-p2-pizza:active { box-shadow: 0 2px 0 #C29000; }
+    .btn-p2-watermelon:active { box-shadow: 0 2px 0 #208C82; }
+    .btn-p2-icecream:active { box-shadow: 0 2px 0 #7A4EB0; }
+
+    /* Center Divider & Health Bar */
+    .divider {
+      width: 90px;
+      height: 100%;
+      background: #1E2233;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 10px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.5);
+      z-index: 10;
+    }
+    .timer-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: #2D3142;
+      padding: 8px 10px;
+      border-radius: 12px;
+      width: 100%;
+    }
+    .timer-icon {
+      width: 24px;
+      height: 24px;
+    }
+    .timer-text {
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: #FFD166;
+    }
+    .health-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      width: 100%;
+      justify-content: center;
+    }
+    .health-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #A0E8AF;
+    }
+    .health-bar-bg {
+      width: 28px;
+      height: 200px;
+      background: #343B58;
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      border: 3px solid #4A537A;
+    }
+    .health-bar-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: var(--health-percent, 100%);
+      background: linear-gradient(180deg, #2EC4B6, #A0E8AF);
+      transition: height 0.2s, background 0.3s;
+    }
+
+    /* Responsive Orientation Rules */
+    @media (orientation: portrait), (max-width: 768px) {
+      #game-screen {
+        flex-direction: column;
+      }
+      .player-zone {
+        width: 100%;
+        height: calc(50% - 38px);
+        padding: 12px;
+      }
+      .player-zone.p2 {
+        order: 1;
+        transform: rotate(180deg);
+      }
+      .divider {
+        order: 2;
+        width: 100%;
+        height: 76px;
+        flex-direction: row;
+        padding: 10px 15px;
+      }
+      .player-zone.p1 {
+        order: 3;
+      }
+      .timer-badge {
+        flex-direction: row;
+        width: auto;
+        padding: 6px 12px;
+        gap: 8px;
+      }
+      .health-wrapper {
+        flex-direction: row;
+        height: 100%;
+        flex: 1;
+        padding: 0 15px;
+      }
+      .health-bar-bg {
+        width: 100%;
+        max-width: 220px;
+        height: 24px;
+      }
+      .health-bar-fill {
+        bottom: auto;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: var(--health-percent, 100%);
+        transition: width 0.2s, background 0.3s;
+      }
+      .task-card {
+        padding: 8px 15px;
+      }
+      .task-content {
+        margin: 4px 0 6px 0;
+      }
+      .task-img {
+        width: 32px;
+        height: 32px;
+      }
+      .task-target {
+        font-size: 1.2rem;
+      }
+      .button-grid {
+        max-height: 160px;
+        gap: 10px;
+      }
+      .action-btn {
+        max-height: 75px;
+        padding: 8px;
+      }
+      .action-btn img {
+        width: 32px;
+        height: 32px;
+      }
+      .btn-label {
+        font-size: 0.75rem;
+      }
+    }
+
+    /* 3. GAME OVER SCREEN */
+    #gameover-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(26, 16, 60, 0.95);
+      backdrop-filter: blur(15px);
+      z-index: 200;
+      padding: 30px;
+      text-align: center;
+    }
+    .result-box {
+      background: #2D3142;
+      border: 4px solid #4A537A;
+      border-radius: 30px;
+      padding: 40px 30px;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes scaleUp {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .result-icon {
+      width: 90px;
+      height: 90px;
+      margin-bottom: 15px;
+    }
+    .result-title {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #FFF;
+      margin-bottom: 10px;
+    }
+    .result-desc {
+      font-size: 1.1rem;
+      color: #E2E2E2;
+      margin-bottom: 30px;
+    }
+    .play-again-btn {
+      background: #2EC4B6;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 900;
+      padding: 15px 40px;
+      border: none;
+      border-radius: 40px;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #208C82;
+      transition: all 0.15s;
+      touch-action: manipulation;
+    }
+    .play-again-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #208C82;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. START SCREEN -->
+  <div id="start-screen" class="screen" style="display: flex;">
+    <div class="title-box">
+      <h1 class="game-title">CO-OP CHAOS!</h1>
+      <div class="game-subtitle">TALK & TAP CO-OP</div>
+    </div>
+    <div class="instructions-card">
+      <h3>
+        <img src="https://api.iconify.design/fluent-emoji-flat:bullhorn.svg" style="width: 28px; height: 28px;" alt="INFO">
+        CARA BERMAIN
+      </h3>
+      <p>
+        Berkomunikasilah! Teriakkan perintah yang muncul di layarmu ke temanmu, karena tombolnya hanya ada di layar mereka! Pencet tombol dengan cepat & tepat untuk bertahan hidup selama 90 detik.
+      </p>
+    </div>
+    <button class="start-btn" onclick="startGame()">MULAI GAME</button>
+  </div>
+
+  <!-- 2. GAME SCREEN -->
+  <div id="game-screen" class="screen">
+    <!-- P2 ZONE (Top / Right) -->
+    <div class="player-zone p2" id="p2-zone">
+      <div class="zone-header">
+        <span class="player-badge">P2 ZONE (TERIAK KE P1)</span>
+        <div class="task-card" id="p2-task-card">
+          <div class="task-label">SURUH P1 PENCET:</div>
+          <div class="task-content">
+            <img id="p2-task-img" src="" class="task-img" alt="">
+            <div class="task-target" id="p2-task-text">-</div>
+          </div>
+          <div class="task-timer-bg">
+            <div class="task-timer-fill" id="p2-task-timer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="button-grid">
+        <button class="action-btn btn-p2-donut" onclick="handlePress('p2', 'p2_donut')">
+          <img src="https://api.iconify.design/fluent-emoji-flat:doughnut.svg" alt="DONAT MANIS">
+          <span class="btn-label">DONAT MANIS</span>
+        </button>
+        <button class="action-btn btn-p2-pizza" onclick="handlePress('p2', 'p2_pizza')">
+          <img src="https://api.iconify.design/fluent-emoji-flat:pizza.svg" alt="POTONGAN PIZZA">
+          <span class="btn-label">POTONGAN PIZZA</span>
+        </button>
+        <button class="action-btn btn-p2-watermelon" onclick="handlePress('p2', 'p2_watermelon')">
+          <img src="https://api.iconify.design/fluent-emoji-flat:watermelon.svg" alt="SEMANGKA SEGAR">
+          <span class="btn-label">SEMANGKA SEGAR</span>
+        </button>
+        <button class="action-btn btn-p2-icecream" onclick="handlePress('p2', 'p2_icecream')">
+          <img src="https://api.iconify.design/fluent-emoji-flat:soft-ice-cream.svg" alt="ES KRIM LEZAT">
+          <span class="btn-label">ES KRIM LEZAT</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CENTER DIVIDER -->
+    <div class="divider">
+      <div class="timer-badge">
+        <img src="https://api.iconify.design/fluent-emoji-flat:alarm-clock.svg" class="timer-icon" alt="WAKTU">
+        <span class="timer-text" id="timerText">90s</span>
+      </div>
+      <div class="health-wrapper">
+        <img src="https://api.iconify.design/fluent-emoji-flat:red-heart.svg" style="width: 28px; height: 28px;" alt="NYAWA">
+        <div class="health-bar-bg">
+          <div class="health-bar-fill" id="healthFill"></div>
+        </div>
+        <span class="health-label" id="healthText">100%</span>
+      </div>
+    </div>
+
+    <!-- P1 ZONE (Bottom / Left) -->
+    <div class="player-zone p1" id="p1-zone">
+      <div class="zone-header">
+        <span class="player-badge">P1 ZONE (TERIAK KE P2)</span>
+        <div class="task-card" id="p1-task-card">
+          <div class="task-label">SURUH P2 PENCET:</div>
+          <div class="task-content">
+            <img id="p1-task-img" src="" class="task-img" alt="">
+            <div class="task-target" id="p1-task-text">-</div>
+          </div>
+          <div class="task-timer-bg">
+            <div class="task-timer-fill" id="p1-task-timer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="button-grid">
+        <button class="action-btn btn-p1-rocket" onclick="handlePress('p1', 'p1_rocket')">
+          <img src="https://api.iconify.design/fluent-emoji-flat:rocket.svg" alt="ROKET MERAH">
+          <span class="btn-label">ROKET MERAH</span>
+        </button>
+        <button class="action-btn btn-p1-fire" onclick="handlePress('p1', 'p1_fire')">
+          <img src="https://api.iconify.design/fluent-emoji-flat:fire.svg" alt="API MEMBARA">
+          <span class="btn-label">API MEMBARA</span>
+        </button>
+        <button class="action-btn btn-p1-crown" onclick="handlePress('p1', 'p1_crown')">
+          <img src="https://api.iconify.design/fluent-emoji-flat:crown.svg" alt="MAHKOTA EMAS">
+          <span class="btn-label">MAHKOTA EMAS</span>
+        </button>
+        <button class="action-btn btn-p1-star" onclick="handlePress('p1', 'p1_star')">
+          <img src="https://api.iconify.design/fluent-emoji-flat:glowing-star.svg" alt="BINTANG BERSINAR">
+          <span class="btn-label">BINTANG BERSINAR</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. GAME OVER SCREEN -->
+  <div id="gameover-screen" class="screen">
+    <div class="result-box">
+      <img id="result-icon" src="" class="result-icon" alt="RESULT">
+      <h2 id="result-title" class="result-title">-</h2>
+      <p id="result-desc" class="result-desc">-</p>
+      <button class="play-again-btn" onclick="startGame()">MAIN LAGI</button>
+    </div>
+  </div>
+
+  <script>
+    /* Audio System (Web Audio API Synthesizer) */
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playSound(type) {
+      try {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const now = audioCtx.currentTime;
+        
+        if (type === 'correct') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now); // D5
+          osc.frequency.setValueAtTime(880, now + 0.1); // A5
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } else if (type === 'wrong') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'win') {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.type = 'triangle';
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(0.2, now + idx * 0.12);
+            g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.3);
+            o.start(now + idx * 0.12);
+            o.stop(now + idx * 0.12 + 0.3);
+          });
+        } else if (type === 'lose') {
+          [300, 250, 200, 150].forEach((freq, idx) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.type = 'sawtooth';
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(0.3, now + idx * 0.15);
+            g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.15 + 0.3);
+            o.start(now + idx * 0.15);
+            o.stop(now + idx * 0.15 + 0.3);
+          });
+        }
+      } catch (e) {
+        console.error('Audio error:', e);
+      }
+    }
+
+    /* Game State & Constants */
+    const TASK_DURATION = 5.0;
+    const GAME_TOTAL_TIME = 90.0;
+    
+    let gameActive = false;
+    let gameInterval = null;
+    let gameTime = GAME_TOTAL_TIME;
+    let health = 100;
+    
+    let activeTaskP1 = null; // Target that P1 tells P2 to press
+    let activeTaskP2 = null; // Target that P2 tells P1 to press
+    let p1TaskTime = TASK_DURATION;
+    let p2TaskTime = TASK_DURATION;
+
+    // Items located on Player 1's grid (P2 receives tasks to tell P1 to press these)
+    const p1Items = [
+      { id: 'p1_rocket', name: 'ROKET MERAH', img: 'https://api.iconify.design/fluent-emoji-flat:rocket.svg' },
+      { id: 'p1_fire', name: 'API MEMBARA', img: 'https://api.iconify.design/fluent-emoji-flat:fire.svg' },
+      { id: 'p1_crown', name: 'MAHKOTA EMAS', img: 'https://api.iconify.design/fluent-emoji-flat:crown.svg' },
+      { id: 'p1_star', name: 'BINTANG BERSINAR', img: 'https://api.iconify.design/fluent-emoji-flat:glowing-star.svg' }
+    ];
+
+    // Items located on Player 2's grid (P1 receives tasks to tell P2 to press these)
+    const p2Items = [
+      { id: 'p2_donut', name: 'DONAT MANIS', img: 'https://api.iconify.design/fluent-emoji-flat:doughnut.svg' },
+      { id: 'p2_pizza', name: 'POTONGAN PIZZA', img: 'https://api.iconify.design/fluent-emoji-flat:pizza.svg' },
+      { id: 'p2_watermelon', name: 'SEMANGKA SEGAR', img: 'https://api.iconify.design/fluent-emoji-flat:watermelon.svg' },
+      { id: 'p2_icecream', name: 'ES KRIM LEZAT', img: 'https://api.iconify.design/fluent-emoji-flat:soft-ice-cream.svg' }
+    ];
+
+    /* Core Functions */
+    function showScreen(screenId) {
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'none';
+      document.getElementById('gameover-screen').style.display = 'none';
+      
+      if (screenId === 'start') {
+        document.getElementById('start-screen').style.display = 'flex';
+      } else if (screenId === 'game') {
+        document.getElementById('game-screen').style.display = 'flex';
+      } else if (screenId === 'gameover') {
+        document.getElementById('gameover-screen').style.display = 'flex';
+      }
+    }
+
+    function startGame() {
+      // Clean up previous loops if any
+      if (gameInterval) clearInterval(gameInterval);
+      
+      // Reset variables
+      gameActive = true;
+      gameTime = GAME_TOTAL_TIME;
+      health = 100;
+      updateHealthDisplay();
+      document.getElementById('timerText').innerText = Math.ceil(gameTime) + 's';
+      
+      showScreen('game');
+      
+      // Generate initial tasks
+      generateTask('p1');
+      generateTask('p2');
+      
+      // Start Game Loop (runs every 100ms)
+      gameInterval = setInterval(updateGameLoop, 100);
+    }
+
+    function generateTask(forScreen) {
+      if (forScreen === 'p1') {
+        let nextItem;
+        do {
+          nextItem = p2Items[Math.floor(Math.random() * p2Items.length)];
+        } while (activeTaskP1 && nextItem.id === activeTaskP1.id && p2Items.length > 1);
+        
+        activeTaskP1 = nextItem;
+        p1TaskTime = TASK_DURATION;
+        document.getElementById('p1-task-text').innerText = activeTaskP1.name;
+        document.getElementById('p1-task-img').src = activeTaskP1.img;
+        document.getElementById('p1-task-card').classList.remove('pulse-red');
+      } else {
+        let nextItem;
+        do {
+          nextItem = p1Items[Math.floor(Math.random() * p1Items.length)];
+        } while (activeTaskP2 && nextItem.id === activeTaskP2.id && p1Items.length > 1);
+        
+        activeTaskP2 = nextItem;
+        p2TaskTime = TASK_DURATION;
+        document.getElementById('p2-task-text').innerText = activeTaskP2.name;
+        document.getElementById('p2-task-img').src = activeTaskP2.img;
+        document.getElementById('p2-task-card').classList.remove('pulse-red');
+      }
+    }
+
+    function handlePress(playerZone, itemId) {
+      if (!gameActive) return;
+      
+      if (playerZone === 'p2') {
+        // P2 pressed a button on their grid. Must match activeTaskP1 (what P1 shouted)
+        if (activeTaskP1 && itemId === activeTaskP1.id) {
+          playSound('correct');
+          updateHealth(10);
+          flashZone('p2', 'correct');
+          generateTask('p1');
+        } else {
+          playSound('wrong');
+          updateHealth(-15);
+          flashZone('p2', 'wrong');
+          generateTask('p1');
+        }
+      } else if (playerZone === 'p1') {
+        // P1 pressed a button on their grid. Must match activeTaskP2 (what P2 shouted)
+        if (activeTaskP2 && itemId === activeTaskP2.id) {
+          playSound('correct');
+          updateHealth(10);
+          flashZone('p1', 'correct');
+          generateTask('p2');
+        } else {
+          playSound('wrong');
+          updateHealth(-15);
+          flashZone('p1', 'wrong');
+          generateTask('p2');
+        }
+      }
+    }
+
+    function flashZone(zone, type) {
+      const el = document.getElementById(zone + '-zone');
+      const className = type === 'correct' ? 'flash-correct' : 'flash-wrong';
+      el.classList.remove('flash-correct', 'flash-wrong');
+      void el.offsetWidth; // Trigger reflow
+      el.classList.add(className);
+    }
+
+    function updateHealth(delta) {
+      health += delta;
+      if (health > 100) health = 100;
+      if (health <= 0) {
+        health = 0;
+        updateHealthDisplay();
+        endGame(false); // Game Over - Lose
+        return;
+      }
+      updateHealthDisplay();
+    }
+
+    function updateHealthDisplay() {
+      const fill = document.getElementById('healthFill');
+      fill.style.setProperty('--health-percent', health + '%');
+      document.getElementById('healthText').innerText = Math.round(health) + '%';
+      
+      if (health > 50) {
+        fill.style.background = 'linear-gradient(180deg, #2EC4B6, #A0E8AF)';
+      } else if (health > 25) {
+        fill.style.background = 'linear-gradient(180deg, #FFD166, #FFA62B)';
+      } else {
+        fill.style.background = 'linear-gradient(180deg, #FF5964, #C83E47)';
+      }
+    }
+
+    function updateGameLoop() {
+      if (!gameActive) return;
+      
+      // Update timer
+      gameTime -= 0.1;
+      if (gameTime <= 0) {
+        gameTime = 0;
+        document.getElementById('timerText').innerText = '0s';
+        endGame(true); // Game Over - Win
+        return;
+      }
+      document.getElementById('timerText').innerText = Math.ceil(gameTime) + 's';
+      
+      // Update P1 Task Timer
+      p1TaskTime -= 0.1;
+      if (p1TaskTime <= 0) {
+        p1TaskTime = 0;
+        playSound('wrong');
+        updateHealth(-20);
+        flashZone('p1', 'wrong');
+        generateTask('p1');
+      }
+      const p1Percent = (p1TaskTime / TASK_DURATION) * 100;
+      const p1TimerBar = document.getElementById('p1-task-timer');
+      p1TimerBar.style.width = p1Percent + '%';
+      if (p1TaskTime < 2.0) {
+        p1TimerBar.style.background = '#FF5964';
+        document.getElementById('p1-task-card').classList.add('pulse-red');
+      } else {
+        p1TimerBar.style.background = '#2EC4B6';
+        document.getElementById('p1-task-card').classList.remove('pulse-red');
+      }
+      
+      // Update P2 Task Timer
+      p2TaskTime -= 0.1;
+      if (p2TaskTime <= 0) {
+        p2TaskTime = 0;
+        playSound('wrong');
+        updateHealth(-20);
+        flashZone('p2', 'wrong');
+        generateTask('p2');
+      }
+      const p2Percent = (p2TaskTime / TASK_DURATION) * 100;
+      const p2TimerBar = document.getElementById('p2-task-timer');
+      p2TimerBar.style.width = p2Percent + '%';
+      if (p2TaskTime < 2.0) {
+        p2TimerBar.style.background = '#FF5964';
+        document.getElementById('p2-task-card').classList.add('pulse-red');
+      } else {
+        p2TimerBar.style.background = '#2EC4B6';
+        document.getElementById('p2-task-card').classList.remove('pulse-red');
+      }
+    }
+
+    function endGame(isWin) {
+      gameActive = false;
+      if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+      }
+      
+      const titleEl = document.getElementById('result-title');
+      const descEl = document.getElementById('result-desc');
+      const iconEl = document.getElementById('result-icon');
+      
+      if (isWin) {
+        playSound('win');
+        titleEl.innerText = 'KALIAN SELAMAT!';
+        titleEl.style.color = '#2EC4B6';
+        descEl.innerText = 'Luar biasa! Komunikasi kalian sangat kompak dan berhasil bertahan selama 90 detik!';
+        iconEl.src = 'https://api.iconify.design/fluent-emoji-flat:party-popper.svg';
+      } else {
+        playSound('lose');
+        titleEl.innerText = 'HANCUR BERANTAKAN!';
+        titleEl.style.color = '#FF5964';
+        descEl.innerText = 'Nyawa habis! Komunikasi kalian kacau balau, coba lebih tenang dan teriak lebih jelas!';
+        iconEl.src = 'https://api.iconify.design/fluent-emoji-flat:collision.svg';
+      }
+      
+      showScreen('gameover');
+    }
+  </script>
+</body>
+</html>
