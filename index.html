@@ -1,791 +1,135 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Co-op Chaos - 90s Asymmetric Co-op Game</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        /* 1. The Absolute Reset & Viewport */
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100vw;
-            height: 100dvh;
-            overflow: hidden;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            box-sizing: border-box;
-            overscroll-behavior: none;
-            background-color: #f8f9fa;
-            color: #1e293b;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        *, *:before, *:after {
-            box-sizing: inherit;
-        }
-
-        /* Utility classes for screens */
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-            z-index: 10;
-        }
-
-        .screen.hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        /* Start & Game Over Screen Aesthetics */
-        #start-screen, #gameover-screen {
-            background: linear-gradient(135deg, #f0fdf4 0%, #f8f9fa 50%, #fff5f5 100%);
-            padding: 5vmin;
-            text-align: center;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 28px;
-            padding: clamp(1.5rem, 4vmin, 3rem);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
-            max-width: min(90vw, 550px);
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2.5vmin;
-        }
-
-        h1 {
-            font-size: clamp(2rem, 6vmin, 3.2rem);
-            font-weight: 800;
-            margin: 0;
-            background: linear-gradient(135deg, #00897B 0%, #FF6B6B 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
-        }
-
-        .subtitle {
-            font-size: clamp(0.9rem, 2.5vmin, 1.2rem);
-            color: #64748b;
-            font-weight: 600;
-            margin-top: -1vmin;
-        }
-
-        .instructions {
-            background: #f8fafc;
-            border-radius: 20px;
-            padding: 2.5vmin;
-            text-align: left;
-            font-size: clamp(0.85rem, 2.2vmin, 1.05rem);
-            color: #334155;
-            line-height: 1.5;
-            width: 100%;
-            border: 1px solid #e2e8f0;
-        }
-
-        .instructions ul {
-            margin: 1vmin 0 0 0;
-            padding-left: 4vmin;
-        }
-
-        .instructions li {
-            margin-bottom: 0.8vmin;
-        }
-
-        .primary-btn {
-            background: #1e293b;
-            color: #ffffff;
-            font-family: inherit;
-            font-size: clamp(1rem, 3vmin, 1.3rem);
-            font-weight: 700;
-            padding: 2vmin 6vmin;
-            border-radius: 24px;
-            border: none;
-            box-shadow: 0 10px 25px rgba(30, 41, 59, 0.25);
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            touch-action: manipulation;
-            margin-top: 1vmin;
-        }
-
-        .primary-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 14px 30px rgba(30, 41, 59, 0.35);
-        }
-
-        .primary-btn:active {
-            transform: scale(0.96) translateY(0);
-        }
-
-        /* 2. Bulletproof Split-Screen Logic */
-        #game-container {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-
-        /* Portrait Mode (Mobile Phones & Vertical Tablets) */
-        @media (orientation: portrait) {
-            #game-container {
-                flex-direction: column;
-            }
-            .health-bar-container {
-                width: 90%;
-                height: 24px;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }
-            .health-bar-fill {
-                width: var(--health, 60%);
-                height: 100%;
-                left: 0;
-                top: 0;
-            }
-            .player-zone.p2 {
-                transform: rotate(180deg);
-            }
-        }
-
-        /* Landscape Mode (Laptops/Desktop/Horizontal Tablets) */
-        @media (orientation: landscape) {
-            #game-container {
-                flex-direction: row;
-            }
-            .health-bar-container {
-                width: 24px;
-                height: 90%;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }
-            .health-bar-fill {
-                width: 100%;
-                height: var(--health, 60%);
-                bottom: 0;
-                left: 0;
-            }
-            .player-zone.p2 {
-                transform: none;
-            }
-        }
-
-        /* Player Zones */
-        .player-zone {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 4vmin;
-            overflow: hidden;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            transition: background-color 0.3s ease;
-        }
-
-        /* Soft color aesthetics */
-        .player-zone.p1 {
-            background-color: #FFF5F5; /* Soft Coral/Peach tint */
-        }
-
-        .player-zone.p2 {
-            background-color: #F0FDF4; /* Clean Mint/Teal tint */
-        }
-
-        .player-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 45vh;
-            margin-bottom: 1.5vmin;
-        }
-
-        .player-badge {
-            font-size: clamp(0.75rem, 2.2vmin, 1rem);
-            font-weight: 800;
-            letter-spacing: 1px;
-            padding: 0.6vmin 2vmin;
-            border-radius: 12px;
-            text-transform: uppercase;
-        }
-
-        .p1 .player-badge {
-            background: #FFE3E3;
-            color: #E53E3E;
-        }
-
-        .p2 .player-badge {
-            background: #DCFCE7;
-            color: #10B981;
-        }
-
-        /* Task timer bar (5s timeout per task) */
-        .task-timer-track {
-            flex: 1;
-            height: 8px;
-            background: rgba(0, 0, 0, 0.06);
-            border-radius: 4px;
-            margin-left: 3vmin;
-            overflow: hidden;
-        }
-
-        .task-timer-fill {
-            height: 100%;
-            width: 100%;
-            border-radius: 4px;
-            transition: width 0.1s linear;
-        }
-
-        .p1 .task-timer-fill { background: #FF6B6B; }
-        .p2 .task-timer-fill { background: #10B981; }
-
-        /* Instruction Box */
-        .instruction-box {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 20px;
-            padding: 2vmin 3vmin;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
-            margin-bottom: 3vmin;
-            width: 100%;
-            max-width: 45vh;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5vmin;
-        }
-
-        .instruction-label {
-            font-size: clamp(0.7rem, 2vmin, 0.9rem);
-            color: #64748b;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        .instruction-target {
-            font-size: clamp(1.2rem, 3.8vmin, 1.9rem);
-            font-weight: 800;
-            color: #0f172a;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .p1 .instruction-target { color: #D97706; } /* Instructing P2 */
-        .p2 .instruction-target { color: #E11D48; } /* Instructing P1 */
-
-        /* 4. Action Button Grid */
-        .action-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 3.5vmin;
-            width: 100%;
-            max-width: min(42vh, 42vw);
-            aspect-ratio: 1/1;
-            margin: auto;
-        }
-
-        @media (orientation: portrait) {
-            .action-grid {
-                max-width: min(36vh, 75vw);
-            }
-        }
-
-        .action-btn {
-            background: #ffffff;
-            border-radius: 24px;
-            border: none;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-            touch-action: manipulation;
-            user-select: none;
-            transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2.5vmin;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.12);
-        }
-
-        .action-btn:active {
-            transform: scale(0.92);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        /* 5. Assets (EXTERNAL IMAGES ONLY) */
-        .action-btn img {
-            width: 55%;
-            height: 55%;
-            object-fit: contain;
-            pointer-events: none;
-            margin: auto;
-            display: block;
-            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .action-btn:active img {
-            transform: scale(0.85);
-        }
-
-        /* Feedback animations */
-        @keyframes pulseGreen {
-            0% { background-color: #ffffff; }
-            50% { background-color: #dcfce7; }
-            100% { background-color: #ffffff; }
-        }
-
-        @keyframes shakeRed {
-            0%, 100% { transform: translateX(0); background-color: #ffffff; }
-            20%, 60% { transform: translateX(-6px); background-color: #fee2e2; }
-            40%, 80% { transform: translateX(6px); background-color: #fee2e2; }
-        }
-
-        .btn-correct {
-            animation: pulseGreen 0.3s ease;
-        }
-
-        .btn-wrong {
-            animation: shakeRed 0.35s ease;
-        }
-
-        /* THE HEALTH BAR (CRITICAL ELEMENT) */
-        .health-bar-container {
-            position: absolute;
-            z-index: 100;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-            padding: 4px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .health-bar-fill {
-            position: absolute;
-            background: linear-gradient(90deg, #EF4444 0%, #F59E0B 50%, #10B981 100%);
-            border-radius: 12px;
-            transition: width 0.3s ease, height 0.3s ease, background-color 0.3s ease;
-        }
-
-        /* Center Timer Badge on Health Bar */
-        .center-timer-badge {
-            position: relative;
-            z-index: 101;
-            background: #1e293b;
-            color: #ffffff;
-            font-weight: 800;
-            font-size: clamp(0.8rem, 2.5vmin, 1.1rem);
-            width: clamp(38px, 9vmin, 52px);
-            height: clamp(38px, 9vmin, 52px);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 0 4px #ffffff;
-            letter-spacing: -0.5px;
-        }
-
-        /* Game Over Specifics */
-        .result-title {
-            font-size: clamp(2.2rem, 7vmin, 3.8rem);
-            font-weight: 800;
-            margin: 0;
-        }
-
-        .result-title.win { color: #10B981; }
-        .result-title.lose { color: #EF4444; }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2vmin;
-            width: 100%;
-            margin: 1vmin 0;
-        }
-
-        .stat-box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            padding: 2vmin;
-            border-radius: 16px;
-        }
-
-        .stat-value {
-            font-size: clamp(1.5rem, 4vmin, 2.2rem);
-            font-weight: 800;
-            color: #0f172a;
-        }
-
-        .stat-label {
-            font-size: clamp(0.75rem, 2vmin, 0.9rem);
-            color: #64748b;
-            font-weight: 600;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WIRE HEIST</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Archivo:wght@400;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- START SCREEN -->
-    <div id="start-screen" class="screen">
-        <div class="card">
-            <div>
-                <h1>Co-op Chaos</h1>
-                <div class="subtitle">90s Asymmetric Co-op Survival</div>
-            </div>
-            
-            <div class="instructions">
-                <strong>🗣️ Aturan Main (Lokal 2 Pemain):</strong>
-                <ul>
-                    <li>Pemain saling berhadapan / duduk berdampingan dalam satu layar.</li>
-                    <li><strong>Layar P1</strong> menampilkan instruksi ikon yang harus diklik oleh <strong>P2</strong>.</li>
-                    <li><strong>Layar P2</strong> menampilkan instruksi ikon yang harus diklik oleh <strong>P1</strong>.</li>
-                    <li>Kalian <strong>wajib berbicara</strong> untuk saling memberi tahu ikon yang benar!</li>
-                    <li>Waktu tiap tugas maksimal <strong>5 detik</strong>. Salah klik / kehabisan waktu = HP berkurang!</li>
-                    <li>Bertahanlah bersama selama <strong>90 detik</strong> untuk menang!</li>
-                </ul>
-            </div>
-
-            <button id="start-btn" class="primary-btn">Mulai Bermain</button>
+  <!-- START OVERLAY -->
+  <div id="overlay-start" class="overlay active">
+    <div class="overlay-content">
+      <div class="stamp-title">WIRE HEIST</div>
+      <div class="subtitle">OPERASI PENYELAMATAN BOLT</div>
+      <div class="intro-text">
+        "Sistem keamanan IT Club ngaco gara-gara virus iseng bernama GLITCH. BOLT keseret masuk ruang server yang sekarang dijagain robot keamanan yang ke-prank. Saatnya kerja tim: satu nyelinap, satu mantau."
+      </div>
+      <div class="controls-info">
+        <div class="control-col">
+          <div class="control-label">PILOT DRONE</div>
+          <div class="control-keys">W A S D</div>
+          <div class="control-desc">Gerakkan drone menyelinap</div>
         </div>
+        <div class="control-col">
+          <div class="control-label">GROUND CONTROL</div>
+          <div class="control-keys">&uarr; &darr; + ENTER</div>
+          <div class="control-desc">Pilih &amp; aktifkan saklar</div>
+        </div>
+      </div>
+      <div class="click-prompt">[ KLIK UNTUK MULAI ]</div>
+    </div>
+  </div>
+
+  <!-- STAMP TRANSITION OVERLAY -->
+  <div id="overlay-stamp" class="overlay stamp-overlay">
+    <div class="stamp-text" id="stamp-text"></div>
+  </div>
+
+  <!-- WIN OVERLAY -->
+  <div id="overlay-win" class="overlay">
+    <div class="overlay-content">
+      <div class="stamp-title">OPERASI SELESAI</div>
+      <div class="win-text">
+        BOLT balik dengan selamat. Semua ini dibangun pakai programming + desain — kalau penasaran caranya, gabung IT Club.
+      </div>
+      <div class="click-prompt">[ KLIK UNTUK MAIN LAGI ]</div>
+    </div>
+  </div>
+
+  <!-- CAUGHT OVERLAY -->
+  <div id="overlay-caught" class="overlay">
+    <div class="overlay-content">
+      <div class="stamp-title caught-title">TERDETEKSI!</div>
+      <div class="intro-text">Drone ketahuan oleh Glitch-Bot. Ruangan akan di-restart.</div>
+      <div class="click-prompt">[ KLIK UNTUK COBA LAGI ]</div>
+    </div>
+  </div>
+
+  <!-- MAIN GAME -->
+  <div id="game-container">
+    <!-- HUD TOP -->
+    <div id="hud-top">
+      <div class="hud-item" id="hud-room">
+        <span class="hud-label">RUANGAN</span>
+        <span class="hud-value" id="hud-room-name">---</span>
+      </div>
+      <div class="hud-item" id="hud-status">
+        <span class="hud-label">STATUS</span>
+        <span class="hud-value" id="hud-status-text">SIAP</span>
+      </div>
+      <div class="hud-item" id="hud-timer" style="display:none;">
+        <span class="hud-label">ALARM</span>
+        <span class="hud-value hud-timer" id="hud-timer-value">--</span>
+      </div>
     </div>
 
-    <!-- GAME SCREEN -->
-    <div id="game-screen" class="screen hidden">
-        <div id="game-container">
-            
-            <!-- PLAYER 2 ZONE (Top in portrait, Right in landscape) -->
-            <div id="p2-zone" class="player-zone p2">
-                <div class="player-header">
-                    <div class="player-badge">Player 2</div>
-                    <div class="task-timer-track">
-                        <div id="p2-timer-fill" class="task-timer-fill"></div>
-                    </div>
-                </div>
-                
-                <div class="instruction-box">
-                    <span class="instruction-label">KEMUKAKAN PADA P1 KLIK IKON:</span>
-                    <span id="p2-instruction-text" class="instruction-target">Loading...</span>
-                </div>
-
-                <div id="p2-grid" class="action-grid">
-                    <button class="action-btn" data-player="2" data-index="0"></button>
-                    <button class="action-btn" data-player="2" data-index="1"></button>
-                    <button class="action-btn" data-player="2" data-index="2"></button>
-                    <button class="action-btn" data-player="2" data-index="3"></button>
-                </div>
-            </div>
-
-            <!-- THE HEALTH BAR (CRITICAL ELEMENT) -->
-            <div class="health-bar-container">
-                <div id="health-bar-fill" class="health-bar-fill" style="--health: 60%;"></div>
-                <div id="center-timer" class="center-timer-badge">90s</div>
-            </div>
-
-            <!-- PLAYER 1 ZONE (Bottom in portrait, Left in landscape) -->
-            <div id="p1-zone" class="player-zone p1">
-                <div class="player-header">
-                    <div class="player-badge">Player 1</div>
-                    <div class="task-timer-track">
-                        <div id="p1-timer-fill" class="task-timer-fill"></div>
-                    </div>
-                </div>
-                
-                <div class="instruction-box">
-                    <span class="instruction-label">KEMUKAKAN PADA P2 KLIK IKON:</span>
-                    <span id="p1-instruction-text" class="instruction-target">Loading...</span>
-                </div>
-
-                <div id="p1-grid" class="action-grid">
-                    <button class="action-btn" data-player="1" data-index="0"></button>
-                    <button class="action-btn" data-player="1" data-index="1"></button>
-                    <button class="action-btn" data-player="1" data-index="2"></button>
-                    <button class="action-btn" data-player="1" data-index="3"></button>
-                </div>
-            </div>
-
+    <!-- MAIN PANELS -->
+    <div id="panels">
+      <!-- DRONE VIEW -->
+      <div id="panel-drone" class="panel">
+        <div class="panel-header">
+          <svg class="panel-icon" viewBox="0 0 24 24" width="18" height="18">
+            <circle cx="12" cy="12" r="4" fill="var(--amber)"/>
+            <circle cx="12" cy="12" r="8" fill="none" stroke="var(--amber)" stroke-width="2"/>
+            <line x1="12" y1="0" x2="12" y2="4" stroke="var(--amber)" stroke-width="2"/>
+            <line x1="12" y1="20" x2="12" y2="24" stroke="var(--amber)" stroke-width="2"/>
+            <line x1="0" y1="12" x2="4" y2="12" stroke="var(--amber)" stroke-width="2"/>
+            <line x1="20" y1="12" x2="24" y2="12" stroke="var(--amber)" stroke-width="2"/>
+          </svg>
+          <span>PANDANGAN DRONE</span>
         </div>
+        <div id="drone-grid" class="game-grid"></div>
+      </div>
+
+      <!-- DIVIDER -->
+      <div id="panel-divider"></div>
+
+      <!-- GROUND CONTROL VIEW -->
+      <div id="panel-ground" class="panel">
+        <div class="panel-header">
+          <svg class="panel-icon" viewBox="0 0 24 24" width="18" height="18">
+            <rect x="2" y="4" width="20" height="14" rx="1" fill="none" stroke="var(--teal)" stroke-width="2"/>
+            <line x1="2" y1="18" x2="22" y2="18" stroke="var(--teal)" stroke-width="2"/>
+            <rect x="5" y="7" width="14" height="8" fill="var(--teal)" opacity="0.3"/>
+          </svg>
+          <span>PETA GROUND CONTROL</span>
+        </div>
+        <div id="ground-grid" class="game-grid"></div>
+        <div id="switch-panel">
+          <div class="switch-header">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <rect x="4" y="2" width="16" height="20" rx="2" fill="none" stroke="var(--paper)" stroke-width="2"/>
+              <circle cx="12" cy="16" r="3" fill="var(--paper)"/>
+            </svg>
+            <span>SAKLAR</span>
+          </div>
+          <div id="switch-list"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- GAME OVER SCREEN -->
-    <div id="gameover-screen" class="screen hidden">
-        <div class="card">
-            <div>
-                <h2 id="result-title" class="result-title win">MENANG!</h2>
-                <div id="result-subtitle" class="subtitle">Kalian berhasil bertahan!</div>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div id="stat-time" class="stat-value">90s</div>
-                    <div class="stat-label">Waktu Bertahan</div>
-                </div>
-                <div class="stat-box">
-                    <div id="stat-correct" class="stat-value" style="color: #10B981;">0</div>
-                    <div class="stat-label">Kerjasama Sukses</div>
-                </div>
-            </div>
-
-            <button id="restart-btn" class="primary-btn">Main Lagi</button>
-        </div>
+    <!-- HUD BOTTOM -->
+    <div id="hud-bottom">
+      <span id="hud-drone-pos">DRONE: --,--</span>
+      <span id="hud-bolt-status">BOLT: TERKUNCI</span>
+      <span id="hud-controls-hint">DRONE: WASD | GROUND: &uarr;&darr; ENTER</span>
     </div>
+  </div>
 
-    <script>
-        /* --- GAME ASSETS (12 High-Quality External Iconify SVGs) --- */
-        const ICONS = [
-            { id: 'star', name: '⭐ BINTANG', url: 'https://api.iconify.design/lucide:star.svg?color=%23F59E0B' },
-            { id: 'heart', name: '❤️ HATI', url: 'https://api.iconify.design/lucide:heart.svg?color=%23EF4444' },
-            { id: 'car', name: '🚗 MOBIL', url: 'https://api.iconify.design/lucide:car.svg?color=%233B82F6' },
-            { id: 'sun', name: '☀️ MATAHARI', url: 'https://api.iconify.design/lucide:sun.svg?color=%23F97316' },
-            { id: 'camera', name: '📸 KAMERA', url: 'https://api.iconify.design/lucide:camera.svg?color=%238B5CF6' },
-            { id: 'gift', name: '🎁 KADO', url: 'https://api.iconify.design/lucide:gift.svg?color=%23EC4899' },
-            { id: 'bell', name: '🔔 LONCENG', url: 'https://api.iconify.design/lucide:bell.svg?color=%2310B981' },
-            { id: 'coffee', name: '☕ KOPI', url: 'https://api.iconify.design/lucide:coffee.svg?color=%2378350F' },
-            { id: 'flame', name: '🔥 API', url: 'https://api.iconify.design/lucide:flame.svg?color=%23EF4444' },
-            { id: 'plane', name: '✈️ PESAWAT', url: 'https://api.iconify.design/lucide:plane.svg?color=%2306B6D4' },
-            { id: 'music', name: '🎵 MUSIK', url: 'https://api.iconify.design/lucide:music.svg?color=%236366F1' },
-            { id: 'crown', name: '👑 MAHKOTA', url: 'https://api.iconify.design/lucide:crown.svg?color=%23EAB308' }
-        ];
-
-        /* Preload Images to prevent lag */
-        ICONS.forEach(icon => {
-            const img = new Image();
-            img.src = icon.url;
-        });
-
-        /* --- GAME STATE --- */
-        let gameState = {
-            isRunning: false,
-            health: 60,
-            timeLeft: 90,
-            correctCount: 0,
-            gameInterval: null,
-            p1: { targetId: null, currentIcons: [], timer: 5.0, timerInterval: null },
-            p2: { targetId: null, currentIcons: [], timer: 5.0, timerInterval: null }
-        };
-
-        /* DOM Elements */
-        const startScreen = document.getElementById('start-screen');
-        const gameScreen = document.getElementById('game-screen');
-        const gameOverScreen = document.getElementById('gameover-screen');
-        const healthBarFill = document.getElementById('health-bar-fill');
-        const centerTimer = document.getElementById('center-timer');
-        const startBtn = document.getElementById('start-btn');
-        const restartBtn = document.getElementById('restart-btn');
-
-        const p1Instruction = document.getElementById('p1-instruction-text');
-        const p2Instruction = document.getElementById('p2-instruction-text');
-        const p1TimerFill = document.getElementById('p1-timer-fill');
-        const p2TimerFill = document.getElementById('p2-timer-fill');
-        const p1Buttons = document.querySelectorAll('#p1-grid .action-btn');
-        const p2Buttons = document.querySelectorAll('#p2-grid .action-btn');
-
-        /* --- EVENT LISTENERS --- */
-        startBtn.addEventListener('click', startGame);
-        restartBtn.addEventListener('click', startGame);
-
-        p1Buttons.forEach(btn => btn.addEventListener('click', () => handlePlayerInput(1, btn)));
-        p2Buttons.forEach(btn => btn.addEventListener('click', () => handlePlayerInput(2, btn)));
-
-        /* --- CORE FUNCTIONS --- */
-        function startGame() {
-            clearAllIntervals();
-
-            gameState.isRunning = true;
-            gameState.health = 60;
-            gameState.timeLeft = 90;
-            gameState.correctCount = 0;
-
-            updateHealthUI();
-            centerTimer.textContent = `90s`;
-
-            switchScreen(gameScreen);
-
-            generateTask(1);
-            generateTask(2);
-
-            /* Main Game 1-second Countdown Timer */
-            gameState.gameInterval = setInterval(() => {
-                if (!gameState.isRunning) return;
-                gameState.timeLeft--;
-                centerTimer.textContent = `${gameState.timeLeft}s`;
-
-                if (gameState.timeLeft <= 0) {
-                    endGame(true);
-                }
-            }, 1000);
-        }
-
-        function switchScreen(activeScreen) {
-            [startScreen, gameScreen, gameOverScreen].forEach(scr => {
-                if (scr === activeScreen) {
-                    scr.classList.remove('hidden');
-                } else {
-                    scr.classList.add('hidden');
-                }
-            });
-        }
-
-        function clearAllIntervals() {
-            if (gameState.gameInterval) clearInterval(gameState.gameInterval);
-            if (gameState.p1.timerInterval) clearInterval(gameState.p1.timerInterval);
-            if (gameState.p2.timerInterval) clearInterval(gameState.p2.timerInterval);
-        }
-
-        /* Generate Task for Player X (1 or 2) */
-        function generateTask(playerNum) {
-            if (!gameState.isRunning) return;
-
-            const playerState = playerNum === 1 ? gameState.p1 : gameState.p2;
-            const buttons = playerNum === 1 ? p1Buttons : p2Buttons;
-            const oppInstruction = playerNum === 1 ? p2Instruction : p1Instruction;
-            const timerFill = playerNum === 1 ? p1TimerFill : p2TimerFill;
-
-            /* Clear previous task timer */
-            if (playerState.timerInterval) clearInterval(playerState.timerInterval);
-
-            /* Pick 4 random unique icons */
-            const shuffled = [...ICONS].sort(() => 0.5 - Math.random());
-            const selectedIcons = shuffled.slice(0, 4);
-            playerState.currentIcons = selectedIcons;
-
-            /* Pick 1 of the 4 as the target */
-            const targetIcon = selectedIcons[Math.floor(Math.random() * 4)];
-            playerState.targetId = targetIcon.id;
-
-            /* Update Opposite Player's Instruction Text */
-            oppInstruction.textContent = targetIcon.name;
-
-            /* Update Player's Buttons */
-            buttons.forEach((btn, idx) => {
-                const iconObj = selectedIcons[idx];
-                btn.dataset.id = iconObj.id;
-                btn.innerHTML = `<img src="${iconObj.url}" alt="${iconObj.name}" draggable="false" />`;
-                btn.classList.remove('btn-correct', 'btn-wrong');
-            });
-
-            /* Reset 5-second task timer */
-            playerState.timer = 5.0;
-            timerFill.style.width = '100%';
-            timerFill.style.transition = 'none';
-
-            /* Start 100ms task countdown interval */
-            setTimeout(() => {
-                timerFill.style.transition = 'width 0.1s linear';
-            }, 50);
-
-            playerState.timerInterval = setInterval(() => {
-                if (!gameState.isRunning) return;
-                playerState.timer -= 0.1;
-                const percentage = Math.max(0, (playerState.timer / 5.0) * 100);
-                timerFill.style.width = `${percentage}%`;
-
-                if (playerState.timer <= 0) {
-                    /* Timeout penalty */
-                    clearInterval(playerState.timerInterval);
-                    adjustHealth(-12);
-                    triggerZoneVisualError(playerNum);
-                    generateTask(playerNum);
-                }
-            }, 100);
-        }
-
-        function handlePlayerInput(playerNum, clickedBtn) {
-            if (!gameState.isRunning) return;
-
-            const playerState = playerNum === 1 ? gameState.p1 : gameState.p2;
-            const clickedId = clickedBtn.dataset.id;
-
-            if (clickedId === playerState.targetId) {
-                /* Correct Tap */
-                gameState.correctCount++;
-                adjustHealth(+8);
-                clickedBtn.classList.add('btn-correct');
-                setTimeout(() => generateTask(playerNum), 150);
-            } else {
-                /* Wrong Tap */
-                adjustHealth(-15);
-                clickedBtn.classList.add('btn-wrong');
-                triggerZoneVisualError(playerNum);
-                setTimeout(() => generateTask(playerNum), 250);
-            }
-        }
-
-        function adjustHealth(amount) {
-            if (!gameState.isRunning) return;
-            gameState.health = Math.min(100, Math.max(0, gameState.health + amount));
-            updateHealthUI();
-
-            if (gameState.health <= 0) {
-                endGame(false);
-            }
-        }
-
-        function updateHealthUI() {
-            healthBarFill.style.setProperty('--health', `${gameState.health}%`);
-        }
-
-        function triggerZoneVisualError(playerNum) {
-            const zone = document.getElementById(playerNum === 1 ? 'p1-zone' : 'p2-zone');
-            const origColor = playerNum === 1 ? '#FFF5F5' : '#F0FDF4';
-            zone.style.backgroundColor = '#fee2e2';
-            setTimeout(() => {
-                zone.style.backgroundColor = origColor;
-            }, 300);
-        }
-
-        function endGame(isWin) {
-            gameState.isRunning = false;
-            clearAllIntervals();
-
-            const resultTitle = document.getElementById('result-title');
-            const resultSubtitle = document.getElementById('result-subtitle');
-            const statTime = document.getElementById('stat-time');
-            const statCorrect = document.getElementById('stat-correct');
-
-            if (isWin) {
-                resultTitle.textContent = "🏆 MENANG!";
-                resultTitle.className = "result-title win";
-                resultSubtitle.textContent = "Luar biasa! Kalian kompak berkolaborasi!";
-                statTime.textContent = "90s";
-            } else {
-                resultTitle.textContent = "💥 KALAH!";
-                resultTitle.className = "result-title lose";
-                resultSubtitle.textContent = "HP habis karena salah klik / kehabisan waktu!";
-                statTime.textContent = `${90 - gameState.timeLeft}s`;
-            }
-
-            statCorrect.textContent = gameState.correctCount;
-            switchScreen(gameOverScreen);
-        }
-    </script>
+  <script src="game.js"></script>
 </body>
 </html>

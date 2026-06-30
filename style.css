@@ -1,0 +1,530 @@
+/* =============================================
+   WIRE HEIST — STYLE
+   Theme: Vintage spy-heist poster
+   ============================================= */
+
+:root {
+  --ink:   #1E1A16;
+  --paper: #EDE3CF;
+  --amber: #E2A33B;
+  --rust:  #B6452C;
+  --teal:  #3E7068;
+
+  --cell-size: 48px;
+  --border-thick: 4px;
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: 'Archivo', sans-serif;
+}
+
+/* =============================================
+   OVERLAYS
+   ============================================= */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--ink);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  flex-direction: column;
+}
+
+.overlay.active {
+  display: flex;
+}
+
+.overlay-content {
+  text-align: center;
+  max-width: 640px;
+  padding: 40px;
+}
+
+.stamp-title {
+  font-family: 'Big Shoulders Display', cursive;
+  font-weight: 900;
+  font-size: 72px;
+  letter-spacing: 6px;
+  color: var(--amber);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.caught-title {
+  color: var(--rust);
+}
+
+.subtitle {
+  font-family: 'Special Elite', cursive;
+  font-size: 18px;
+  color: var(--paper);
+  opacity: 0.7;
+  letter-spacing: 4px;
+  margin-bottom: 32px;
+}
+
+.intro-text {
+  font-family: 'Archivo', sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--paper);
+  opacity: 0.85;
+  margin-bottom: 36px;
+  padding: 20px;
+  border: 2px solid var(--amber);
+  position: relative;
+}
+
+.intro-text::before {
+  content: '"';
+  font-family: 'Big Shoulders Display', cursive;
+  font-size: 60px;
+  color: var(--amber);
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  line-height: 1;
+  opacity: 0.5;
+}
+
+.win-text {
+  font-family: 'Archivo', sans-serif;
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--paper);
+  margin-bottom: 36px;
+  padding: 24px;
+  border: 2px solid var(--teal);
+}
+
+.controls-info {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.control-col {
+  text-align: center;
+  padding: 16px 24px;
+  border: 2px solid var(--paper);
+  opacity: 0.85;
+}
+
+.control-label {
+  font-family: 'Big Shoulders Display', cursive;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--amber);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.control-keys {
+  font-family: 'Special Elite', cursive;
+  font-size: 28px;
+  color: var(--paper);
+  margin-bottom: 4px;
+}
+
+.control-desc {
+  font-family: 'Archivo', sans-serif;
+  font-size: 12px;
+  color: var(--paper);
+  opacity: 0.6;
+}
+
+.click-prompt {
+  font-family: 'Special Elite', cursive;
+  font-size: 18px;
+  color: var(--amber);
+  letter-spacing: 3px;
+  animation: blink-prompt 1.5s ease-in-out infinite;
+  cursor: pointer;
+}
+
+@keyframes blink-prompt {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* =============================================
+   STAMP TRANSITION
+   ============================================= */
+.stamp-overlay {
+  background: rgba(30, 26, 22, 0.95);
+  pointer-events: none;
+}
+
+.stamp-text {
+  font-family: 'Special Elite', cursive;
+  font-size: 64px;
+  color: var(--rust);
+  letter-spacing: 6px;
+  border: 6px solid var(--rust);
+  padding: 16px 40px;
+  transform: scale(3);
+  opacity: 0;
+  text-transform: uppercase;
+}
+
+.stamp-overlay.active .stamp-text {
+  animation: stamp-in 0.25s ease-out forwards,
+             stamp-out 0.2s ease-in 0.5s forwards;
+}
+
+@keyframes stamp-in {
+  0%   { transform: scale(3) rotate(-8deg); opacity: 0; }
+  100% { transform: scale(1) rotate(-3deg); opacity: 1; }
+}
+
+@keyframes stamp-out {
+  0%   { transform: scale(1) rotate(-3deg); opacity: 1; }
+  100% { transform: scale(0.8) rotate(-3deg); opacity: 0; }
+}
+
+/* =============================================
+   GAME CONTAINER
+   ============================================= */
+#game-container {
+  display: none;
+  width: 100vw;
+  height: 100vh;
+  flex-direction: column;
+  background: var(--ink);
+}
+
+#game-container.active {
+  display: flex;
+}
+
+/* =============================================
+   HUD
+   ============================================= */
+#hud-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 24px;
+  background: var(--ink);
+  border-bottom: var(--border-thick) solid var(--paper);
+  min-height: 44px;
+}
+
+.hud-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud-label {
+  font-family: 'Special Elite', cursive;
+  font-size: 12px;
+  color: var(--paper);
+  opacity: 0.5;
+  letter-spacing: 2px;
+}
+
+.hud-value {
+  font-family: 'Big Shoulders Display', cursive;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--amber);
+  letter-spacing: 1px;
+}
+
+.hud-timer {
+  color: var(--rust);
+  font-size: 24px;
+}
+
+#hud-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 24px;
+  background: var(--ink);
+  border-top: 2px solid rgba(237, 227, 207, 0.15);
+  font-family: 'Special Elite', cursive;
+  font-size: 12px;
+  color: var(--paper);
+  opacity: 0.5;
+  letter-spacing: 1px;
+}
+
+/* =============================================
+   PANELS
+   ============================================= */
+#panels {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+}
+
+#panel-divider {
+  width: var(--border-thick);
+  background: var(--paper);
+  flex-shrink: 0;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Big Shoulders Display', cursive;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: var(--paper);
+  opacity: 0.6;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.panel-icon {
+  flex-shrink: 0;
+}
+
+/* =============================================
+   GAMES GRID
+   ============================================= */
+.game-grid {
+  display: grid;
+  gap: 0;
+  border: 3px solid var(--paper);
+  background: var(--ink);
+  position: relative;
+}
+
+.cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(237, 227, 207, 0.08);
+}
+
+/* Cell types */
+.cell-wall {
+  background: var(--paper);
+  opacity: 0.12;
+}
+
+.cell-floor {
+  background: transparent;
+}
+
+.cell-door {
+  background: var(--amber);
+  opacity: 0.25;
+  border: 2px solid var(--amber);
+}
+
+.cell-door-open {
+  background: var(--amber);
+  opacity: 0.5;
+  border: 2px solid var(--amber);
+}
+
+.cell-exit {
+  background: var(--teal);
+  opacity: 0.35;
+  border: 2px dashed var(--teal);
+}
+
+.cell-exit-active {
+  background: var(--teal);
+  opacity: 0.6;
+  border: 2px solid var(--teal);
+  animation: exit-pulse 1s ease-in-out infinite;
+}
+
+@keyframes exit-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.9; }
+}
+
+.cell-bolt {
+  background: var(--amber);
+  opacity: 0.3;
+}
+
+/* Fog of war — redacted style */
+.cell-redacted {
+  background: var(--ink);
+}
+
+.cell-redacted::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    rgba(237, 227, 207, 0.04) 3px,
+    rgba(237, 227, 207, 0.04) 4px
+  );
+}
+
+/* Drone */
+.drone-marker {
+  width: 28px;
+  height: 28px;
+  position: relative;
+  z-index: 10;
+}
+
+/* Glitch Bot */
+.bot-marker {
+  width: 30px;
+  height: 30px;
+  position: relative;
+  z-index: 10;
+}
+
+/* Bot vision area */
+.cell-bot-vision {
+  background: rgba(182, 69, 44, 0.15);
+  border: 1px solid rgba(182, 69, 44, 0.25);
+}
+
+.cell-bot-vision::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 4px,
+    rgba(182, 69, 44, 0.08) 4px,
+    rgba(182, 69, 44, 0.08) 5px
+  );
+}
+
+/* Bolt marker on ground view */
+.bolt-marker-ground {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  z-index: 5;
+}
+
+/* =============================================
+   SWITCH PANEL
+   ============================================= */
+#switch-panel {
+  width: 100%;
+  max-width: 380px;
+  margin-top: 8px;
+  border: 2px solid var(--paper);
+  padding: 8px 12px;
+  background: rgba(62, 112, 104, 0.08);
+}
+
+.switch-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Big Shoulders Display', cursive;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--teal);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+#switch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.switch-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-family: 'Special Elite', cursive;
+  font-size: 14px;
+  color: var(--paper);
+  border: 1px solid rgba(237, 227, 207, 0.15);
+  background: transparent;
+  transition: background 0.1s;
+}
+
+.switch-item.selected {
+  border-color: var(--amber);
+  background: rgba(226, 163, 59, 0.12);
+}
+
+.switch-item.selected .switch-indicator {
+  background: var(--amber);
+}
+
+.switch-indicator {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--paper);
+  flex-shrink: 0;
+}
+
+.switch-item.cooldown .switch-indicator {
+  background: var(--rust);
+  animation: cooldown-blink 0.5s ease-in-out infinite;
+}
+
+@keyframes cooldown-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.switch-item.cooldown {
+  opacity: 0.5;
+}
+
+.switch-item.active-switch .switch-indicator {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+/* =============================================
+   SCROLLBAR
+   ============================================= */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ink);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--paper);
+  opacity: 0.3;
+}
