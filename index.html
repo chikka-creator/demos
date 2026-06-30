@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>WIRE HEIST</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +23,8 @@
           <div class="control-label">PILOT DRONE</div>
           <div class="control-keys">W A S D</div>
           <div class="control-desc">Gerakkan drone menyelinap</div>
+          <div class="control-keys" style="margin-top:6px;">SPASI</div>
+          <div class="control-desc">Tembak robot</div>
         </div>
         <div class="control-col">
           <div class="control-label">GROUND CONTROL</div>
@@ -59,6 +61,25 @@
     </div>
   </div>
 
+  <!-- QUIZ OVERLAY -->
+  <div id="overlay-quiz" class="overlay">
+    <div class="overlay-content quiz-box">
+      <div class="quiz-header">
+        <svg viewBox="0 0 24 24" width="20" height="20">
+          <rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="var(--amber)" stroke-width="2"/>
+          <text x="12" y="16" text-anchor="middle" font-family="Special Elite" font-size="12" fill="var(--amber)">?</text>
+        </svg>
+        <span class="quiz-label">VERIFIKASI KEAMANAN</span>
+      </div>
+      <div class="quiz-question" id="quiz-question">Pertanyaan</div>
+      <div class="quiz-choices" id="quiz-choices"></div>
+      <div class="quiz-feedback" id="quiz-feedback"></div>
+      <div class="quiz-timer-bar">
+        <div class="quiz-timer-fill" id="quiz-timer-fill"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- MAIN GAME -->
   <div id="game-container">
     <!-- HUD TOP -->
@@ -70,6 +91,10 @@
       <div class="hud-item" id="hud-status">
         <span class="hud-label">STATUS</span>
         <span class="hud-value" id="hud-status-text">SIAP</span>
+      </div>
+      <div class="hud-item" id="hud-shoot-cool" style="display:none;">
+        <span class="hud-label">TEMBAK</span>
+        <span class="hud-value" id="hud-shoot-text">SIAP</span>
       </div>
       <div class="hud-item" id="hud-timer" style="display:none;">
         <span class="hud-label">ALARM</span>
@@ -119,6 +144,58 @@
           </div>
           <div id="switch-list"></div>
         </div>
+        <div id="puzzle-panel" style="display:none;">
+          <div class="puzzle-header">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <rect x="2" y="2" width="20" height="20" rx="2" fill="none" stroke="var(--amber)" stroke-width="2"/>
+              <text x="12" y="16" text-anchor="middle" font-family="Special Elite" font-size="11" fill="var(--amber)">?</text>
+            </svg>
+            <span>VAULT CODE</span>
+          </div>
+          <div class="puzzle-code-display" id="puzzle-code-display"></div>
+          <div class="puzzle-hint" id="puzzle-hint">Injak angka di map sesuai urutan kode!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE TOUCH CONTROLS -->
+    <div id="touch-controls">
+      <!-- DRONE TOUCH -->
+      <div id="touch-drone" class="touch-section">
+        <div class="touch-label">DRONE</div>
+        <div class="dpad">
+          <button class="dpad-btn dpad-up" data-dir="up" aria-label="Up">&#9650;</button>
+          <button class="dpad-btn dpad-left" data-dir="left" aria-label="Left">&#9664;</button>
+          <button class="dpad-btn dpad-center" data-dir="shoot" aria-label="Shoot">
+            <svg viewBox="0 0 24 24" width="20" height="20">
+              <circle cx="12" cy="12" r="6" fill="none" stroke="var(--amber)" stroke-width="2"/>
+              <circle cx="12" cy="12" r="2" fill="var(--amber)"/>
+              <line x1="12" y1="0" x2="12" y2="5" stroke="var(--amber)" stroke-width="2"/>
+              <line x1="12" y1="19" x2="12" y2="24" stroke="var(--amber)" stroke-width="2"/>
+              <line x1="0" y1="12" x2="5" y2="12" stroke="var(--amber)" stroke-width="2"/>
+              <line x1="19" y1="12" x2="24" y2="12" stroke="var(--amber)" stroke-width="2"/>
+            </svg>
+          </button>
+          <button class="dpad-btn dpad-right" data-dir="right" aria-label="Right">&#9654;</button>
+          <button class="dpad-btn dpad-down" data-dir="down" aria-label="Down">&#9660;</button>
+        </div>
+      </div>
+
+      <div class="touch-divider-v"></div>
+
+      <!-- GROUND CONTROL TOUCH -->
+      <div id="touch-ground" class="touch-section">
+        <div class="touch-label">CONTROL</div>
+        <div class="ground-btns">
+          <button class="ground-btn ground-up" data-dir="switch-up" aria-label="Switch Up">&#9650;</button>
+          <button class="ground-btn ground-activate" data-action="activate" aria-label="Activate">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="var(--teal)" stroke-width="2"/>
+              <text x="12" y="16" text-anchor="middle" font-family="Special Elite" font-size="11" fill="var(--teal)">OK</text>
+            </svg>
+          </button>
+          <button class="ground-btn ground-down" data-dir="switch-down" aria-label="Switch Down">&#9660;</button>
+        </div>
       </div>
     </div>
 
@@ -126,7 +203,7 @@
     <div id="hud-bottom">
       <span id="hud-drone-pos">DRONE: --,--</span>
       <span id="hud-bolt-status">BOLT: TERKUNCI</span>
-      <span id="hud-controls-hint">DRONE: WASD | GROUND: &uarr;&darr; ENTER</span>
+      <span id="hud-controls-hint">DRONE: WASD+SPASI | GROUND: &uarr;&darr; ENTER</span>
     </div>
   </div>
   <script src="game.js"></script>
