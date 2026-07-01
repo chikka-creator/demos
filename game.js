@@ -294,6 +294,7 @@
   var puzzlePanel    = document.getElementById('puzzle-panel');
   var puzzleCodeDisp = document.getElementById('puzzle-code-display');
   var puzzleHintEl   = document.getElementById('puzzle-hint');
+  var mobilePuzzleHint = document.getElementById('mobile-puzzle-hint');
 
   /* ─────────────────────────────────────
      INIT
@@ -320,6 +321,11 @@
     gameContainer.classList.add('active');
     state.currentLevel = 0;
     state.phase = 'playing';
+
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch(function () {});
+    }
+
     loadLevel(state.currentLevel);
   }
 
@@ -411,6 +417,7 @@
       buildPuzzleDisplay(level.puzzle.code);
     } else {
       puzzlePanel.style.display = 'none';
+      if (mobilePuzzleHint) { mobilePuzzleHint.classList.remove('active'); mobilePuzzleHint.textContent = ''; }
     }
 
     if (level.hint && !state.hintShown && index === 0) {
@@ -477,6 +484,10 @@
       puzzleCodeDisp.appendChild(digit);
     }
     puzzleHintEl.textContent = 'Injak angka di map sesuai urutan kode!';
+    if (mobilePuzzleHint) {
+      mobilePuzzleHint.textContent = 'Injak angka di map sesuai urutan kode!';
+      mobilePuzzleHint.classList.add('active');
+    }
   }
 
   function checkPuzzleTile(x, y) {
@@ -506,10 +517,12 @@
         state.puzzleComplete = true;
         puzzleHintEl.textContent = 'KODE BENAR! Pintu terbuka!';
         puzzleHintEl.style.color = 'var(--teal)';
+        if (mobilePuzzleHint) { mobilePuzzleHint.textContent = 'KODE BENAR!'; mobilePuzzleHint.style.color = 'var(--teal)'; }
         unlockPuzzleDoor(level.puzzle);
       } else {
         puzzleHintEl.textContent = 'Benar! ' + state.puzzleProgress + '/' + code.length;
         puzzleHintEl.style.color = 'var(--teal)';
+        if (mobilePuzzleHint) { mobilePuzzleHint.textContent = 'Benar! ' + state.puzzleProgress + '/' + code.length; mobilePuzzleHint.style.color = 'var(--teal)'; }
       }
     } else {
       state.puzzleProgress = 0;
@@ -517,9 +530,11 @@
       updatePuzzleDisplay(-1, 'wrong');
       puzzleHintEl.textContent = 'SALAH! Ulangi dari awal.';
       puzzleHintEl.style.color = 'var(--rust)';
+      if (mobilePuzzleHint) { mobilePuzzleHint.textContent = 'SALAH! Ulangi.'; mobilePuzzleHint.style.color = 'var(--rust)'; }
       setTimeout(function () {
         puzzleHintEl.textContent = 'Injak angka di map sesuai urutan kode!';
         puzzleHintEl.style.color = '';
+        if (mobilePuzzleHint) { mobilePuzzleHint.textContent = 'Injak angka di map sesuai urutan kode!'; mobilePuzzleHint.style.color = ''; }
       }, 2000);
     }
     renderAll();
@@ -1180,24 +1195,26 @@
 
     var groundBtns = document.querySelectorAll('.ground-btn');
     groundBtns.forEach(function (btn) {
-      var repeatTimer = null;
       function doAction() {
         if (state.phase !== 'playing') return;
         var a = btn.dataset.dir || btn.dataset.action;
-        if (a === 'switch-up') selectSwitch(-1);
-        if (a === 'switch-down') selectSwitch(1);
-        if (a === 'activate') activateSwitch();
+        if (a === 'activate') {
+          var len = state.switches.length;
+          if (len > 1) {
+            var next = (state.selectedSwitch + 1) % len;
+            state.selectedSwitch = next;
+            updateSwitchUI();
+          }
+          activateSwitch();
+        }
       }
       function onStart(e) {
         e.preventDefault();
         if (state.phase !== 'playing') return;
         doAction();
-        var a = btn.dataset.dir || btn.dataset.action;
-        if (a !== 'activate') repeatTimer = setInterval(doAction, 150);
       }
       function onEnd(e) {
         e.preventDefault();
-        if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null; }
       }
       btn.addEventListener('touchstart', onStart, { passive: false });
       btn.addEventListener('touchend', onEnd, { passive: false });
