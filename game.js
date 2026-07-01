@@ -321,11 +321,6 @@
     gameContainer.classList.add('active');
     state.currentLevel = 0;
     state.phase = 'playing';
-
-    if (screen.orientation && screen.orientation.lock) {
-      screen.orientation.lock('landscape').catch(function () {});
-    }
-
     loadLevel(state.currentLevel);
   }
 
